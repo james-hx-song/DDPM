@@ -5,7 +5,8 @@ def get_dataset(IMG_SIZE):
         [
         torchvision.transforms.Resize((IMG_SIZE, IMG_SIZE)),
         torchvision.transforms.ToTensor(),
+        torchvision.transforms.Lambda(lambda x: (x * 2) - 1)
         ]
     )
-    dataset = torchvision.datasets.CIFAR100(root='.', download=True, transform=transforms)
+    dataset = torchvision.datasets.MNIST(root='.', download=True, transform=transforms)
     return dataset

@@ -164,3 +164,4 @@ cython_debug/
 # datasets
 cifar-100-python/
 cifar-100-python.tar.gz
+MNIST/

@@ -2,7 +2,7 @@ import torch
 import torch.nn as nn
 
 class Diffusion:
-    def __init__(self, T=1000, beta_1=1e-4, beta_T=0.02, img_size=64, noise_sch='linear', device='cuda'):
+    def __init__(self, T=1000, num_chn=3, beta_1=1e-4, beta_T=0.02, img_size=64, noise_sch='linear', device='cuda'):
         assert noise_sch in ['linear', 'cosine'], f"noise_sch must be either 'linear' or 'cosine', got {noise_sch}"
 
         self.T = T
@@ -12,6 +12,7 @@ class Diffusion:
         self.noise_sch = noise_sch
         self.device = device
         self.s = 0.008
+        self.num_chn = num_chn
 
         self.beta = self.alpha_bar = self.alpha = None
         self.set_schedule()
@@ -41,6 +42,26 @@ class Diffusion:
         noise = torch.randn_like(x, device=self.device)
 
         return sqrt_alpha_bar * x + sqrt_one_minus_alpha_bar * noise, noise
+    
+    def sample(self, model, n):
+        print(f"Sampling {n} images")
+        model.eval()
+        with torch.no_grad():
+            x = torch.randn(n, 1, self.img_size, self.img_size, device=self.device)
+            for i in reversed(range(1, self.T)):
+                z = torch.randn_like(x, device=self.device) if i > 1 else 0
+                
+                t = (torch.ones(n, device=self.device) * i).long()
+                alpha = self.alpha[t][:, None, None, None]
+                alpha_bar = self.alpha_bar[t][:, None, None, None]
+                beta = self.beta[t][:, None, None, None]
+
+                x = 1 / torch.sqrt(alpha_bar) * (x - (1 - alpha) / torch.sqrt(1 - alpha_bar) * model(x, t)) +  torch.sqrt(beta) * z
+        model.train()
+        x = x.clamp(-1, 1)
+        x = (x+1)/2
+        x = x*255
+        return x
 
         
 if __name__ == "__main__":
@@ -54,14 +75,22 @@ if __name__ == "__main__":
         torchvision.transforms.ToTensor(),
         ]
     )
-    dataset = torchvision.datasets.CIFAR100(root='.', download=True, transform=transforms)
+    dataset = torchvision.datasets.MNIST(root='.', download=True, transform=transforms)
 
+    print(dataset[0][0].shape)
     img = dataset[0][0].unsqueeze(0)
 
     
-    diff2 = Diffusion(device='cpu', noise_sch='cosine')
+    diff2 = Diffusion(img_size=IMG_SIZE, device='cpu', noise_sch='cosine')
     from utils import plot_increasing_noise_comparison  
     plot_increasing_noise_comparison(img, diff, diff2, steps=10)
+    # diff = Diffusion(device='cpu')
+    # from models.unet import UNet
+    # model = UNet()
+
+    # x = diff.sample(model, 1)
+
+
 
 
 
