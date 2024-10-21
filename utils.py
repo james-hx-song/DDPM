@@ -24,5 +24,6 @@ def plot_increasing_noise_comparison(x0, diff1, diff2, steps=5):
     axs[1, 0].set_ylabel('Cosine Schedule')
 
     plt.tight_layout()
+    plt.savefig(".github/cosine_noise.png")
     plt.show()
 

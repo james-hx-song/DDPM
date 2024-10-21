@@ -47,7 +47,7 @@ class Diffusion:
         print(f"Sampling {n} images")
         model.eval()
         with torch.no_grad():
-            x = torch.randn(n, 1, self.img_size, self.img_size, device=self.device)
+            x = torch.randn(n, self.num_chn, self.img_size, self.img_size, device=self.device)
             for i in reversed(range(1, self.T)):
                 z = torch.randn_like(x, device=self.device) if i > 1 else 0
                 
@@ -75,7 +75,7 @@ if __name__ == "__main__":
         torchvision.transforms.ToTensor(),
         ]
     )
-    dataset = torchvision.datasets.MNIST(root='.', download=True, transform=transforms)
+    dataset = torchvision.datasets.CIFAR100(root='.', download=True, transform=transforms)
 
     print(dataset[0][0].shape)
     img = dataset[0][0].unsqueeze(0)
@@ -83,6 +83,7 @@ if __name__ == "__main__":
     
     diff2 = Diffusion(img_size=IMG_SIZE, device='cpu', noise_sch='cosine')
     from utils import plot_increasing_noise_comparison  
+    import matplotlib.pyplot as plt
     plot_increasing_noise_comparison(img, diff, diff2, steps=10)
     # diff = Diffusion(device='cpu')
     # from models.unet import UNet
