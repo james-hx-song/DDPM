@@ -17,8 +17,8 @@ class PositionalEmbeddings(nn.Module):
     embeddings = torch.exp(torch.arange(half_dim, device=device) * -embeddings)
 
     embeddings = t.unsqueeze(-1) * embeddings.unsqueeze(0)
-    embeddings = torch.cat((embeddings.sin(), embeddings.cos()), dim=-1)
-
+    embeddings = torch.stack((embeddings.sin(), embeddings.cos()), dim=-1)
+    embeddings = embeddings.view(t.shape[0], -1)
     return embeddings
 
 
