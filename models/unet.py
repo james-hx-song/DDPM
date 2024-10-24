@@ -15,7 +15,7 @@ class PositionalEmbeddings(nn.Module):
     # this is following
     embeddings = math.log(10000) / (half_dim - 1)
     embeddings = torch.exp(torch.arange(half_dim, device=device) * -embeddings)
-
+ 
     embeddings = t.unsqueeze(-1) * embeddings.unsqueeze(0)
     embeddings = torch.stack((embeddings.sin(), embeddings.cos()), dim=-1)
     embeddings = embeddings.view(t.shape[0], -1)
@@ -74,7 +74,7 @@ class SelfAttention(nn.Module):
       return x
     
 class UNet(nn.Module):
-    def __init__(self, c_in=3, c_out=3, layers=6, time_emb_dim=32, num_heads=4):
+    def __init__(self, c_in=3, c_out=3, layers=4, time_emb_dim=32, num_heads=4):
         super().__init__()
 
         # downs = [16, 32, 64, 128, 256, 512]
@@ -96,15 +96,18 @@ class UNet(nn.Module):
     def forward(self, x, t):
         t = self.time_embeddings(t)
         x = self.conv0(x)
-
+        skip_connections = []
         for down in self.downs:
             x = down(x, t)
+            skip_connections.append(x)
             x = F.avg_pool2d(x, kernel_size=2)
         # print(x.shape)
         x = self.attention(x)
-        for up in self.ups:
-            x = up(x, t)
+        for idx, up in enumerate(self.ups):
             x = F.interpolate(x, scale_factor=2, mode="nearest")
+            skip_connection = skip_connections[-(idx + 1)] 
+            x = x + skip_connection 
+            x = up(x, t)
 
 
         x = self.outconv(x)
